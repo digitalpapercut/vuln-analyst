@@ -4,6 +4,16 @@ An open-source AI agent for vulnerability research and triage. Point it at any C
 
 Three ways to use it: **browser extension** (works on any CVE page), **CLI harness** (automation and scripting), or **AI coding assistant skills** (Claude Code, Cursor, Copilot).
 
+---
+
+## Screenshots
+
+![Triage tab — SSVC verdict with signal strip](docs/images/Triage.png)
+
+![Research tab — full enrichment profile with Exploit-DB, Nuclei, Metasploit, and KEV](docs/images/Research.png)
+
+![Write-up tab — risk acceptance memo generated from live triage data](docs/images/Writeup.png)
+
 No data-source API keys required. All enrichment sources are free and open.
 
 ---
