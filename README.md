@@ -4,16 +4,6 @@ An open-source AI agent for vulnerability research and triage. Point it at any C
 
 Three ways to use it: **browser extension** (works on any CVE page), **CLI harness** (automation and scripting), or **AI coding assistant skills** (Claude Code, Cursor, Copilot).
 
----
-
-## Screenshots
-
-![Triage tab — SSVC verdict with signal strip](docs/images/Triage.png)
-
-![Research tab — full enrichment profile with Exploit-DB, Nuclei, Metasploit, and KEV](docs/images/Research.png)
-
-![Write-up tab — risk acceptance memo generated from live triage data](docs/images/Writeup.png)
-
 No data-source API keys required. All enrichment sources are free and open.
 
 ---
@@ -80,6 +70,18 @@ Works on any page with a CVE. No terminal needed.
 - Identifier aliases (CVE ↔ GHSA ↔ OSV)
 
 **WRITE-UP** — Document generation using your actual triage evidence.
+
+**RED TEAM** — For authorized security testing. Generates:
+- ATT&CK technique mapping (Txxxx IDs with links to attack.mitre.org)
+- Attack chain phase (Initial Access, Execution, Privilege Escalation, etc.) with likely follow-on techniques
+- Exploitation maturity rating (weaponized / functional / poc / theoretical) derived from live exploit signals
+- Prerequisites: network position, authentication required, skill level
+- Detection context: what gets logged, IOC types, evasion considerations for sophisticated attackers
+- Verified exploit links direct to exploit-db.com when available — clearly labeled verified vs. unverified
+- Pentest finding title you can copy straight into a report
+- Plain-language CVSS explanation for non-technical clients
+
+> All red team analysis is for authorized engagements only. The tool links to public exploit pages but never downloads or serves exploit code.
 - **Executive summary** — ≤200 words, business language, one clear ask with date
 - **Remediation ticket** — affected versions, fixed version, exploitation evidence, validation step
 - **Risk-acceptance memo** — full auditor-ready document with voiding conditions, signature blocks, and mandatory review date

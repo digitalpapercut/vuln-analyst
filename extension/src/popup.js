@@ -671,6 +671,24 @@ async function generateRedTeam() {
         <div class="section-label">Exploitation maturity</div>
         <span class="maturity-badge ${matClass}">${escHtml(analysis.exploitation_maturity || '')}</span>
         <p style="font-size:12px;color:var(--muted);margin-top:4px">${escHtml(analysis.exploitation_maturity_reasoning || '')}</p>
+        ${(() => {
+          const edbEntries = enrichData?.exploitdb?.exploits || [];
+          const verified = edbEntries.filter(e => e.verified);
+          const unverified = edbEntries.filter(e => !e.verified);
+          if (!edbEntries.length) return '';
+          return `<div style="margin-top:8px">
+            ${verified.length ? `<div class="section-label" style="margin-bottom:4px">✓ Verified exploit code</div>
+            ${verified.map(e => `<div style="margin-bottom:4px">
+              <a href="${escHtml(e.url)}" target="_blank" style="color:var(--act);font-size:12px;font-weight:600">${escHtml(e.title.slice(0,70))}</a>
+              <span style="color:var(--muted);font-size:11px"> · ${escHtml(e.type)} · ${escHtml(e.platform)} · EDB-${escHtml(e.edb_id)}</span>
+            </div>`).join('')}` : ''}
+            ${unverified.length ? `<div class="section-label" style="margin-top:6px;margin-bottom:4px">Unverified exploit references</div>
+            ${unverified.map(e => `<div style="margin-bottom:4px">
+              <a href="${escHtml(e.url)}" target="_blank" style="color:var(--accent2);font-size:12px">${escHtml(e.title.slice(0,70))}</a>
+              <span style="color:var(--muted);font-size:11px"> · ${escHtml(e.type)} · ${escHtml(e.platform)} · EDB-${escHtml(e.edb_id)}</span>
+            </div>`).join('')}` : ''}
+          </div>`;
+        })()}
       </div>
 
       <div class="section">
