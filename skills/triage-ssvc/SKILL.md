@@ -33,6 +33,7 @@ python3 scripts/kev_check.py <CVE>
 python3 scripts/nvd_fetch.py <CVE>
 python3 scripts/cvelist_fetch.py <CVE>
 python3 scripts/exploit_signals.py <CVE>   # Nuclei template / Metasploit module presence
+python3 scripts/exploitdb_lookup.py <CVE>    # Documented public exploits on Exploit-DB
 ```
 
 Note: `cvelist_fetch.py` may return a ready-made CISA ADP SSVC assessment
@@ -40,14 +41,28 @@ Note: `cvelist_fetch.py` may return a ready-made CISA ADP SSVC assessment
 scores the vulnerability in the abstract, while your job is to score it for
 *this user's environment*.
 
+
+## Step 1.5 — Cross-source conflict check
+
+Before reasoning, scan for conflicts:
+- CVSS score differs between NVD and cvelistV5 → note which you use and why
+- Exploitation status conflicts (e.g. EPSS very low but in KEV) → this
+  disagreement IS the finding; explain it explicitly in the report
+- Affected versions differ between sources → use cvelistV5 as authoritative,
+  note NVD as corroboration or flag the gap
+- Any source returned an error → label that source as unavailable and state
+  what confidence you lose (e.g. "NVD rate-limited — CVSS not verified")
+
+Never proceed to the decision tree with unacknowledged conflicts or errors.
+
 ## Step 2 — Determine the three tree inputs
 
 ### Decision point 1: Exploitation status
 - **active** — in CISA KEV, or credible reporting of exploitation in the
   wild (KEV `known_ransomware_use: Known` is the strongest signal).
 - **poc** — public proof-of-concept exists: `exploit_signals.py` reports a
-  Metasploit module or Nuclei template, or NVD/cvelistV5 references are
-  tagged `exploit`, or a public PoC repo exists. A Metasploit module or
+  Metasploit module or Nuclei template, `exploitdb_lookup.py` returns one or
+  more documented exploits, or NVD/cvelistV5 references are tagged `exploit`. A Metasploit module or
   Nuclei template is also strong evidence for **Automatable: yes** — the
   exploitation step is already packaged for automation.
   A high EPSS score (roughly ≥ 0.10, or percentile ≥ 90) with no confirmed

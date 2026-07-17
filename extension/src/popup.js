@@ -202,7 +202,7 @@ function buildEnrichmentSummary(data) {
     }
   }
 
-  const edb = data.exploitdb;
+  const edb = d.exploitdb;
   if (edb?.found) {
     lines.push(`Exploit-DB: ${edb.exploit_count} documented exploit(s) — types: ${[...new Set(edb.exploits.map(e => e.type))].join(', ')}`);
     const verified = edb.exploits.filter(e => e.verified);
@@ -557,7 +557,7 @@ ${context ? `Additional context: ${context}` : ''}
 
 ${formatInstructions[format]}`,
       }],
-      system: 'You are a security analyst writing practitioner communications. Be specific, cite the actual data provided, state every metric with its source date. Do not invent data not provided. Use plain language for non-technical audiences in exec summaries.',
+      system: 'You are a security analyst writing practitioner communications. VALIDATION RULES: (1) Only cite metrics that appear explicitly in the data provided — never estimate or interpolate missing values, use "not available" instead. (2) Every number must include its source and date, e.g. "EPSS 0.94 as of 2026-07-16 per FIRST.org". (3) If the SSVC decision is not provided, do not invent one. (4) Do not add context, threat actor names, or exploitation details not present in the enrichment data. Be specific, use plain language for non-technical audiences in exec summaries.',
       provider: settings.provider,
       model: settings.model,
       apiKey: settings.apiKey,
@@ -715,9 +715,8 @@ function showError(message) {
       <div class="empty-icon">⚠</div>
       <h3>Something went wrong</h3>
       <p>${escHtml(message)}</p>
-      <button class="btn" style="margin-top:12px" id="retryBtn">Retry</button>
+      <button class="btn" style="margin-top:12px" onclick="location.reload()">Retry</button>
     </div>`;
-  $('retryBtn').addEventListener('click', () => location.reload());
   $('tabs').style.display = 'flex';
   showPanel('panel-triage');
 }

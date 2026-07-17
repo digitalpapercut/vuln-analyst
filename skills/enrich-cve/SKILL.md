@@ -34,11 +34,22 @@ python3 scripts/epss_lookup.py <CVE>
 python3 scripts/kev_check.py <CVE>
 python3 scripts/osv_lookup.py id <CVE>   # if open-source software involved
 python3 scripts/exploit_signals.py <CVE>  # Nuclei/Metasploit tooling presence
+python3 scripts/exploitdb_lookup.py <CVE>   # Documented public exploits
 ```
 
 If web search is available, additionally look for: vendor advisory, credible
 exploitation reporting, and whether a Metasploit module or Nuclei template
 exists. Cite what you find; skip silently if search is unavailable.
+
+
+## Step 2.5 — Data quality check
+
+Before synthesizing, verify:
+- Which sources returned valid data vs. errors — list both
+- Any material conflicts between sources (score, version, status)
+- Whether any metric you plan to cite was actually returned this session
+  (never fill a gap from memory — use "not available" instead)
+- EPSS date: scores older than 7 days should be flagged as potentially stale
 
 ## Step 3 — Synthesize
 

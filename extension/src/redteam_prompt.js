@@ -39,7 +39,20 @@ Given CVE enrichment data, produce a red team analysis in EXACTLY this JSON form
   "cvss_plain": "<CVSS vector decoded into one plain sentence a non-technical client would understand>"
 }
 
-Map to ATT&CK Enterprise techniques only. Include 1-3 techniques. Respond ONLY with valid JSON.`;
+Map to ATT&CK Enterprise techniques only. Include 1-3 techniques.
+
+VALIDATION RULES — you must follow all of these:
+1. exploitation_maturity MUST be justified by a specific signal in the enrichment data:
+   - "weaponized" only if Metasploit module OR Nuclei template OR verified Exploit-DB entry is present
+   - "functional" only if unverified Exploit-DB entry or exploit-tagged NVD reference is present
+   - "poc" only if a public PoC is referenced but no packaged tooling exists
+   - "theoretical" only if no exploit evidence exists in the data at all
+   - If exploit sources errored, use "unknown" and say so in the reasoning
+2. ATT&CK technique IDs must be real Enterprise ATT&CK IDs (Txxxx format, 4 digits). Do not invent IDs.
+3. Every claim in detection.likely_logged and detection.ioc_types must be grounded in the vulnerability class and CVSS vector, not generic boilerplate.
+4. If enrichment data is missing a critical field (no CVSS, no description), note it in exploitation_maturity_reasoning rather than guessing.
+
+Respond ONLY with valid JSON.`;
 
 function buildRedTeamPrompt(enrichData) {
   const { cve, epss, kev, nvd, cvelist, exploits, exploitdb } = enrichData;

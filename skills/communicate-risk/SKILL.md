@@ -52,6 +52,19 @@ The writeup most tools can't produce and auditors most want to see:
   directly from the triage's "would change this decision" section.
 - **Review date.**
 
+
+## Validation before writing
+
+Before generating any document:
+1. List every metric you plan to cite (EPSS score, KEV date, CVSS score,
+   exploitation status). Verify each one appears in the triage data from
+   this session. If any is missing, use "not available" — never estimate.
+2. Every number must include its source and date:
+   - ✓ "EPSS 0.94 (99th percentile) as of 2026-07-16 per FIRST.org"
+   - ✗ "EPSS score of approximately 0.9"
+3. If triage was not run in this session, run enrich-cve first.
+   Never generate a risk-acceptance memo or exec summary from memory.
+
 ## Rules
 
 - State the data date on every metric ("EPSS 0.91 as of 2026-07-14").

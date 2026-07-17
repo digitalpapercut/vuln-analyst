@@ -41,6 +41,37 @@ which scanner, SIEM, or ticketing system they use.
    modify configurations, or take remediation actions. Recommend; the human
    decides and acts.
 
+
+## Validation requirements
+
+7. **Validate CVE ID format before fetching.** A well-formed CVE ID matches
+   `CVE-YYYY-NNNNN` where YYYY is a 4-digit year and NNNNN is 4 or more digits.
+   If the user provides a malformed ID, correct it or ask before running any
+   scripts. Never pass a malformed ID to a data source.
+
+8. **Flag source conflicts explicitly.** If two sources disagree on a material
+   fact — CVSS score, affected versions, exploitation status — surface the
+   conflict rather than silently picking one. State which source you trust for
+   that fact and why (e.g. "cvelistV5 is the CNA-authoritative record;
+   NVD analysis may lag").
+
+9. **Handle partial data gracefully.** If a source returns an error (rate
+   limit, 404, timeout), state which source failed and what that means for
+   confidence in the output. Never silently omit a failed source or fill its
+   gap from model memory. Proceed with the available data and label the gap.
+
+10. **Never interpolate missing figures.** If EPSS has not yet scored a CVE,
+    say so — do not estimate a score. If KEV status is unknown because the
+    feed failed to load, say so — do not assume "not listed." Every number
+    in every output must trace to a specific script result from this session.
+
+11. **Justify every exploitation maturity claim with a specific signal.**
+    "Weaponized" requires a Metasploit module, Nuclei template, or Exploit-DB
+    verified entry from this session's enrichment data. "PoC" requires an
+    exploit-tagged reference or documented PoC. "None" is only valid when all
+    three sources returned no results AND the search was successful (not errored).
+    If sources errored, say maturity is "unknown" not "none."
+
 ## Skills
 
 Consult the skill whose description matches the task. Summary routing:
@@ -68,6 +99,7 @@ evidence, then applies the SSVC decision tree, and may end in
 | cvelistV5 | `scripts/cvelist_fetch.py` | CNA source-of-truth record, affected versions, CISA ADP SSVC |
 | OSV.dev | `scripts/osv_lookup.py` | Cross-ecosystem ID aliases, open-source package version ranges |
 | Nuclei + Metasploit indexes | `scripts/exploit_signals.py` | Public weaponized-tooling presence (strong poc/automatable evidence) |
+| Exploit-DB | `scripts/exploitdb_lookup.py` | Documented public exploits with EDB-ID, type, platform, verification status |
 | (composite) | `scripts/bulk_enrich.py` | Batch EPSS+KEV+tooling for CVE lists / scanner exports, sorted for triage |
 
 Optional environment variables: `NVD_API_KEY` (raises NVD rate limits).
