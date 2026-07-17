@@ -26,9 +26,9 @@ Navigate to any CVE page, click the extension icon, hit Analyze:
 
 ## Screenshots
 
-![Triage tab — ACT verdict on CVE-2024-3400](docs/images/triage.png)
+![Triage tab — ACT verdict on CVE-2024-3400](docs/images/Triage.png)
 
-![Risk-acceptance memo generated from live triage data](docs/images/writeup.png)
+![Risk-acceptance memo generated from live triage data](docs/images/Writeup.png)
 ---
 
 ## Prerequisites
