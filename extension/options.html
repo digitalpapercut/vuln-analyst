@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Vuln Analyst Agent — Settings</title>
+<style>
+  :root {
+    --bg: #0d1117; --surface: #161b22; --border: #21262d;
+    --accent: #f78166; --accent2: #58a6ff;
+    --text: #e6edf3; --muted: #7d8590;
+    --track-s: #3fb950;
+    --radius: 6px;
+    --mono: 'JetBrains Mono', 'Fira Code', monospace;
+    --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: var(--sans); font-size: 13px;
+    min-height: 100vh;
+  }
+  .page { max-width: 520px; margin: 0 auto; padding: 32px 24px; }
+  header { display: flex; align-items: center; gap: 10px; margin-bottom: 28px; }
+  .logo {
+    width: 28px; height: 28px; background: var(--accent);
+    border-radius: 6px; display: flex; align-items: center;
+    justify-content: center; font-size: 14px; font-weight: 700; color: #fff;
+  }
+  header h1 { font-size: 16px; font-weight: 600; }
+  header p { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 18px 20px; margin-bottom: 16px;
+  }
+  .card h2 {
+    font-size: 11px; font-weight: 600; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 14px;
+  }
+  .field { margin-bottom: 12px; }
+  .field:last-child { margin-bottom: 0; }
+  label { display: block; font-size: 11px; color: var(--muted); margin-bottom: 4px; }
+  input, select {
+    width: 100%; background: var(--bg); border: 1px solid var(--border);
+    border-radius: var(--radius); color: var(--text);
+    font-family: var(--mono); font-size: 12px;
+    padding: 7px 10px; outline: none;
+    transition: border-color 0.15s;
+  }
+  input:focus, select:focus { border-color: var(--accent2); }
+  input[type=password] { letter-spacing: 0.1em; }
+  .hint { font-size: 11px; color: var(--muted); margin-top: 4px; line-height: 1.4; }
+  .hint a { color: var(--accent2); text-decoration: none; }
+  .hint a:hover { text-decoration: underline; }
+  .save-row { display: flex; align-items: center; gap: 12px; margin-top: 20px; }
+  .btn {
+    background: var(--accent); border: none; border-radius: var(--radius);
+    color: #fff; cursor: pointer; font-size: 13px; font-weight: 600;
+    padding: 8px 20px; transition: opacity 0.15s;
+  }
+  .btn:hover { opacity: 0.85; }
+  .save-msg { font-size: 12px; color: var(--track-s); display: none; }
+  .test-row { margin-top: 10px; }
+  .test-btn {
+    background: var(--border); border: none; border-radius: var(--radius);
+    color: var(--text); cursor: pointer; font-size: 12px;
+    padding: 6px 14px; transition: opacity 0.15s;
+  }
+  .test-btn:hover { opacity: 0.8; }
+  .test-result { font-size: 12px; margin-top: 6px; min-height: 18px; }
+  .ok { color: var(--track-s); }
+  .err { color: #ff4444; }
+</style>
+</head>
+<body>
+<div class="page">
+  <header>
+    <div class="logo">V</div>
+    <div>
+      <h1>Vuln Analyst Agent</h1>
+      <p>Settings</p>
+    </div>
+  </header>
+
+  <div class="card">
+    <h2>LLM Provider</h2>
+    <div class="field">
+      <label>Provider</label>
+      <select id="provider">
+        <option value="anthropic">Anthropic (Claude)</option>
+        <option value="openai">OpenAI</option>
+        <option value="custom">Custom / local (OpenAI-compatible)</option>
+      </select>
+    </div>
+    <div class="field" id="customBaseRow" style="display:none">
+      <label>API Base URL</label>
+      <input type="text" id="apiBase" placeholder="http://localhost:11434/v1">
+      <p class="hint">Ollama, vLLM, LM Studio, or any OpenAI-compatible endpoint.</p>
+    </div>
+    <div class="field">
+      <label>API Key</label>
+      <input type="password" id="apiKey" placeholder="sk-ant-… or sk-…">
+      <p class="hint">
+        Anthropic: <a href="https://console.anthropic.com/settings/keys" target="_blank">console.anthropic.com</a> ·
+        OpenAI: <a href="https://platform.openai.com/api-keys" target="_blank">platform.openai.com</a><br>
+        Stored locally in this browser only — never sent anywhere except directly to the provider.
+      </p>
+    </div>
+    <div class="field">
+      <label>Model <span style="color:var(--muted)">(leave blank for default: claude-sonnet-4-6)</span></label>
+      <input type="text" id="model" placeholder="">
+    </div>
+    <div class="test-row">
+      <button class="test-btn" id="testBtn">Test connection</button>
+      <div class="test-result" id="testResult"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Optional — NVD API Key</h2>
+    <div class="field">
+      <label>NVD API Key</label>
+      <input type="password" id="nvdApiKey" placeholder="Optional — raises rate limits from 5 to 50 req/30s">
+      <p class="hint">Get one free at <a href="https://nvd.nist.gov/developers/request-an-api-key" target="_blank">nvd.nist.gov</a>. Not required.</p>
+    </div>
+  </div>
+
+  <div class="save-row">
+    <button class="btn" id="saveBtn">Save settings</button>
+    <span class="save-msg" id="saveMsg">✓ Saved</span>
+  </div>
+</div>
+<script src="src/options.js"></script>
+</body>
+</html>

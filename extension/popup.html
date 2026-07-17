@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vuln Analyst Agent</title>
+<style>
+  /* ── tokens ── */
+  :root {
+    --bg:        #0d1117;
+    --surface:   #161b22;
+    --border:    #21262d;
+    --accent:    #f78166;
+    --accent2:   #58a6ff;
+    --text:      #e6edf3;
+    --muted:     #7d8590;
+    --act:       #ff4444;
+    --attend:    #f0883e;
+    --track-s:   #3fb950;
+    --track:     #7d8590;
+    --mono:      'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+    --sans:      -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    --radius:    6px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    width: 440px;
+    min-height: 200px;
+    max-height: 640px;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    font-size: 13px;
+    line-height: 1.5;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* ── header ── */
+  header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    flex-shrink: 0;
+  }
+  .logo {
+    width: 22px; height: 22px;
+    background: var(--accent);
+    border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700; color: #fff; flex-shrink: 0;
+  }
+  header h1 {
+    font-size: 13px; font-weight: 600; flex: 1;
+    letter-spacing: 0.01em;
+  }
+  .gear-btn {
+    background: none; border: none; cursor: pointer;
+    color: var(--muted); font-size: 16px; padding: 2px 4px;
+    border-radius: var(--radius);
+    transition: color 0.15s;
+  }
+  .gear-btn:hover { color: var(--text); }
+
+  /* ── CVE input row ── */
+  .input-row {
+    display: flex;
+    gap: 6px;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    flex-shrink: 0;
+  }
+  .cve-input {
+    flex: 1;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 12px;
+    padding: 6px 10px;
+    outline: none;
+    text-transform: uppercase;
+    transition: border-color 0.15s;
+  }
+  .cve-input:focus { border-color: var(--accent2); }
+  .cve-input::placeholder { color: var(--muted); text-transform: none; }
+
+  .btn {
+    background: var(--accent);
+    border: none; border-radius: var(--radius);
+    color: #fff; cursor: pointer;
+    font-size: 12px; font-weight: 600;
+    padding: 6px 14px;
+    white-space: nowrap;
+    transition: opacity 0.15s;
+  }
+  .btn:hover { opacity: 0.85; }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-ghost {
+    background: var(--border);
+    color: var(--text);
+  }
+
+  /* ── tabs ── */
+  .tabs {
+    display: flex;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    flex-shrink: 0;
+  }
+  .tab {
+    flex: 1; background: none; border: none;
+    color: var(--muted); cursor: pointer;
+    font-size: 11px; font-weight: 500;
+    padding: 7px 4px;
+    border-bottom: 2px solid transparent;
+    transition: color 0.15s, border-color 0.15s;
+    letter-spacing: 0.03em;
+  }
+  .tab.active {
+    color: var(--accent2);
+    border-bottom-color: var(--accent2);
+  }
+  .tab:hover:not(.active) { color: var(--text); }
+
+  /* ── panels ── */
+  .panel { display: none; flex: 1; overflow-y: auto; padding: 12px 14px; }
+  .panel.active { display: block; }
+
+  /* ── status / loading ── */
+  .status {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 0; color: var(--muted); font-size: 12px;
+  }
+  .spinner {
+    width: 14px; height: 14px; border-radius: 50%;
+    border: 2px solid var(--border);
+    border-top-color: var(--accent2);
+    animation: spin 0.7s linear infinite; flex-shrink: 0;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── verdict card ── */
+  .verdict-card {
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin-bottom: 12px;
+  }
+  .verdict-header {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px;
+  }
+  .verdict-badge {
+    font-family: var(--mono); font-size: 11px; font-weight: 700;
+    padding: 3px 8px; border-radius: 3px; letter-spacing: 0.05em;
+    text-transform: uppercase; flex-shrink: 0;
+  }
+  .badge-ACT    { background: var(--act);     color: #fff; }
+  .badge-ATTEND { background: var(--attend);  color: #fff; }
+  .badge-TRACKS { background: var(--track-s); color: #000; }
+  .badge-TRACK  { background: var(--track);   color: #fff; }
+
+  .verdict-cve {
+    font-family: var(--mono); font-size: 12px; color: var(--accent2);
+    font-weight: 600;
+  }
+  .verdict-title {
+    font-size: 12px; color: var(--muted); flex: 1;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+
+  /* ── signal row ── */
+  .signals {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 1px; background: var(--border);
+    border-top: 1px solid var(--border);
+  }
+  .signal {
+    background: var(--bg);
+    padding: 8px 10px;
+    display: flex; flex-direction: column; gap: 2px;
+  }
+  .signal-label {
+    font-size: 10px; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 0.06em;
+  }
+  .signal-value {
+    font-family: var(--mono); font-size: 12px; font-weight: 600;
+  }
+  .sig-high   { color: var(--act); }
+  .sig-med    { color: var(--attend); }
+  .sig-low    { color: var(--track-s); }
+  .sig-none   { color: var(--muted); }
+  .sig-kev    { color: var(--act); }
+  .sig-exploit{ color: var(--attend); }
+
+  /* ── reasoning sections ── */
+  .section { margin-bottom: 12px; }
+  .section-label {
+    font-size: 10px; font-weight: 600; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 0.07em;
+    margin-bottom: 5px;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .section-label::after {
+    content: ''; flex: 1; height: 1px; background: var(--border);
+  }
+  .section-body {
+    font-size: 12px; color: var(--text); line-height: 1.6;
+  }
+  .section-body p { margin-bottom: 6px; }
+  .section-body p:last-child { margin-bottom: 0; }
+
+  /* ── inputs grid (SSVC) ── */
+  .inputs-grid {
+    display: grid; grid-template-columns: 1fr 1fr;
+    gap: 6px; margin-bottom: 12px;
+  }
+  .input-chip {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 6px 8px;
+    display: flex; flex-direction: column; gap: 2px;
+  }
+  .chip-label {
+    font-size: 10px; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 0.05em;
+  }
+  .chip-value {
+    font-size: 12px; font-weight: 600;
+  }
+
+  /* ── context form ── */
+  .context-form {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 10px 12px;
+    margin-bottom: 12px;
+  }
+  .context-form p {
+    font-size: 12px; color: var(--text); margin-bottom: 8px; line-height: 1.5;
+  }
+  .form-row { margin-bottom: 8px; }
+  .form-label {
+    display: block; font-size: 11px; color: var(--muted); margin-bottom: 4px;
+  }
+  select, textarea {
+    width: 100%;
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: var(--radius); color: var(--text);
+    font-family: var(--sans); font-size: 12px;
+    padding: 5px 8px; outline: none;
+    transition: border-color 0.15s;
+  }
+  select:focus, textarea:focus { border-color: var(--accent2); }
+  textarea { resize: vertical; min-height: 56px; }
+
+  /* ── sources ── */
+  .sources {
+    display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px;
+  }
+  .source-tag {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 3px; padding: 2px 6px;
+    font-size: 10px; color: var(--muted);
+    font-family: var(--mono);
+  }
+  .source-tag.fresh { border-color: var(--track-s); color: var(--track-s); }
+
+  /* ── change delta ── */
+  .change-list { list-style: none; }
+  .change-list li {
+    padding: 4px 0; border-bottom: 1px solid var(--border);
+    font-size: 12px; color: var(--muted);
+    display: flex; gap: 6px; align-items: baseline;
+  }
+  .change-list li:last-child { border-bottom: none; }
+  .change-list li::before { content: '→'; color: var(--accent); flex-shrink: 0; }
+
+  /* ── empty state ── */
+  .empty {
+    text-align: center; padding: 32px 20px; color: var(--muted);
+  }
+  .empty-icon { font-size: 28px; margin-bottom: 8px; }
+  .empty h3 { font-size: 13px; color: var(--text); margin-bottom: 4px; }
+  .empty p  { font-size: 12px; line-height: 1.5; }
+
+  /* ── options page ── */
+  .options-body {
+    padding: 16px 14px; display: flex; flex-direction: column; gap: 14px;
+  }
+  .opt-section h2 {
+    font-size: 11px; font-weight: 600; color: var(--muted);
+    text-transform: uppercase; letter-spacing: 0.07em;
+    margin-bottom: 8px;
+  }
+  .opt-row { margin-bottom: 8px; }
+  .opt-label {
+    display: block; font-size: 11px; color: var(--muted); margin-bottom: 3px;
+  }
+  input[type=text], input[type=password] {
+    width: 100%; background: var(--bg); border: 1px solid var(--border);
+    border-radius: var(--radius); color: var(--text);
+    font-family: var(--mono); font-size: 12px;
+    padding: 6px 10px; outline: none;
+  }
+  input[type=text]:focus, input[type=password]:focus { border-color: var(--accent2); }
+  .save-row { display: flex; gap: 8px; align-items: center; }
+  .save-msg { font-size: 12px; color: var(--track-s); }
+
+  /* ── scrollbar ── */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">V</div>
+  <h1>Vuln Analyst Agent</h1>
+  <button class="gear-btn" id="openOptions" title="Settings">⚙</button>
+</header>
+
+<div class="input-row">
+  <input class="cve-input" id="cveInput" placeholder="CVE-2024-3400 or type any CVE…" spellcheck="false">
+  <button class="btn" id="analyzeBtn">Analyze</button>
+</div>
+
+<div class="tabs" id="tabs" style="display:none">
+  <button class="tab active" data-tab="triage">TRIAGE</button>
+  <button class="tab" data-tab="enrich">RESEARCH</button>
+  <button class="tab" data-tab="comms">WRITE-UP</button>
+</div>
+
+<div class="panel active" id="panel-start">
+  <div class="empty">
+    <div class="empty-icon">🔍</div>
+    <h3>Analyze any CVE</h3>
+    <p>Enter a CVE ID above — or navigate to any vulnerability page and it'll be detected automatically.</p>
+  </div>
+</div>
+
+<div class="panel" id="panel-loading">
+  <div class="status">
+    <div class="spinner"></div>
+    <span id="loadingMsg">Fetching EPSS, KEV, NVD, exploit signals…</span>
+  </div>
+</div>
+
+<div class="panel" id="panel-triage"></div>
+<div class="panel" id="panel-enrich"></div>
+<div class="panel" id="panel-comms"></div>
+
+<script src="src/popup.js"></script>
+</body>
+</html>

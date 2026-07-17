@@ -1,0 +1,46 @@
+{
+  "manifest_version": 3,
+  "name": "Vuln Analyst Agent",
+  "description": "SSVC triage and vulnerability research on any CVE, anywhere. Powered by EPSS, CISA KEV, NVD, and open exploit indexes.",
+  "version": "1.0.0",
+  "permissions": [
+    "activeTab",
+    "storage",
+    "scripting"
+  ],
+  "host_permissions": [
+    "https://api.first.org/*",
+    "https://www.cisa.gov/*",
+    "https://services.nvd.nist.gov/*",
+    "https://api.osv.dev/*",
+    "https://raw.githubusercontent.com/*",
+    "https://api.anthropic.com/*",
+    "https://api.openai.com/*"
+  ],
+  "background": {
+    "service_worker": "src/background.js",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["src/content.js"],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    },
+    "default_title": "Vuln Analyst Agent"
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "options_page": "options.html"
+}
