@@ -24,6 +24,11 @@ Navigate to any CVE page, click the extension icon, hit Analyze:
 - **Research tab** — full enrichment profile: description, CVSS decoded, CWE, affected versions, exploit tooling details, identifier aliases
 - **Write-up tab** — one-click exec summary, remediation ticket, or auditor-ready risk-acceptance memo using the actual evidence fetched — not generic templates
 
+## Screenshots
+
+![Triage tab — ACT verdict on CVE-2024-3400](docs/images/triage.png)
+
+![Risk-acceptance memo generated from live triage data](docs/images/writeup.png)
 ---
 
 ## Prerequisites
