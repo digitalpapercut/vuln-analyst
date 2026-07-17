@@ -202,6 +202,15 @@ function buildEnrichmentSummary(data) {
     }
   }
 
+  const edb = data.exploitdb;
+  if (edb?.found) {
+    lines.push(`Exploit-DB: ${edb.exploit_count} documented exploit(s) — types: ${[...new Set(edb.exploits.map(e => e.type))].join(', ')}`);
+    const verified = edb.exploits.filter(e => e.verified);
+    if (verified.length) lines.push(`  Verified exploits: ${verified.length} (${verified.map(e => e.title.slice(0,60)).join('; ')})`);
+  } else {
+    lines.push('Exploit-DB: no documented exploits found');
+  }
+
   if (cvelist?.cisa_adp_ssvc) {
     lines.push(`CISA ADP SSVC assessment: ${JSON.stringify(cvelist.cisa_adp_ssvc)}`);
   }
@@ -240,6 +249,7 @@ function renderAll() {
   renderTriage();
   renderEnrich();
   renderComms();
+  renderRedTeam();
 }
 
 function renderTriage() {
@@ -441,15 +451,15 @@ function renderEnrich() {
 
     ${d.exploitdb?.found ? `
     <div class="section">
-      <div class="section-label">Exploit-DB (${d.exploitdb.exploit_count} entr${d.exploitdb.exploit_count === 1 ? 'y' : 'ies'})</div>
+      <div class="section-label">⚠ Exploit-DB entries (${d.exploitdb.exploit_count})</div>
       <div class="section-body">
         ${d.exploitdb.exploits.slice(0,5).map(e =>
           `<p><a href="${escHtml(e.url)}" target="_blank" style="color:var(--accent2)">${escHtml(e.title.slice(0,80))}</a>
-          <span style="color:var(--muted)"> · ${escHtml(e.type)} · ${escHtml(e.platform)}${e.verified ? ' · <span style="color:var(--attend)">verified</span>' : ''}</span></p>`
+          <span style="color:var(--muted)"> · ${escHtml(e.type)} · ${escHtml(e.platform)} · ${e.verified ? '<span style="color:var(--attend)">verified</span>' : 'unverified'}</span></p>`
         ).join('')}
       </div>
     </div>` : ''}
-    
+
     ${exploits?.weaponized_tooling_public ? `
     <div class="section">
       <div class="section-label">⚠ Public exploit tooling</div>
@@ -573,6 +583,131 @@ ${formatInstructions[format]}`,
   }
 }
 
+
+// ─── red team panel ─────────────────────────────────────────────────────────
+function renderRedTeam() {
+  $('panel-redteam').innerHTML = `
+    <div class="disclaimer-box">
+      ⚠ For authorized security testing only. This tab provides technique classification and attack chain context — not exploit code or attack instructions.
+    </div>
+    <div class="section">
+      <div class="section-label">ATT&CK Analysis</div>
+      <div class="section-body" style="margin-bottom:10px">
+        <p>Maps this vulnerability to MITRE ATT&CK techniques, attack chain phase, prerequisites, and detection context for authorized engagements.</p>
+      </div>
+      <button class="btn" id="genRedTeamBtn" style="width:100%">Generate Red Team Analysis</button>
+    </div>
+    <div id="redteam-output"></div>`;
+  $('genRedTeamBtn').addEventListener('click', generateRedTeam);
+}
+
+async function generateRedTeam() {
+  $('genRedTeamBtn').disabled = true;
+  $('genRedTeamBtn').textContent = 'Analyzing…';
+  $('redteam-output').innerHTML = '';
+
+  try {
+    const prompt = buildRedTeamPrompt(enrichData);
+    const text = await msg('CALL_LLM', {
+      messages: [{ role: 'user', content: prompt }],
+      system: REDTEAM_SYSTEM,
+      provider: settings.provider,
+      model: settings.model,
+      apiKey: settings.apiKey,
+    });
+
+    let analysis;
+    try {
+      analysis = JSON.parse(text.replace(/```json|```/g, '').trim());
+    } catch {
+      $('redteam-output').innerHTML = `<p style="color:var(--act);font-size:12px;padding:8px 0">Parse error — raw response:<br><pre style="font-size:10px;white-space:pre-wrap">${escHtml(text.slice(0,500))}</pre></p>`;
+      return;
+    }
+
+    const matClass = { weaponized:'mat-weaponized', functional:'mat-functional', poc:'mat-poc', theoretical:'mat-theoretical' }[analysis.exploitation_maturity] || 'mat-poc';
+    const techniques = (analysis.attck_techniques || []).map(t =>
+      `<div class="attck-badge"><a href="${escHtml(t.url)}" target="_blank">${escHtml(t.id)}</a><span style="color:var(--text)">${escHtml(t.name)}</span></div>`
+    ).join('');
+
+    const followOn = (analysis.attack_chain?.follow_on || []).map(f =>
+      `<li>${escHtml(f)}</li>`).join('');
+
+    const prereqs = [
+      { label: 'Network position', value: analysis.prerequisites?.network_position },
+      { label: 'Auth required', value: analysis.prerequisites?.authentication },
+      { label: 'Special conditions', value: analysis.prerequisites?.special_conditions },
+      { label: 'Skill level', value: analysis.prerequisites?.skill_level },
+    ].map(p => `
+      <div class="input-chip">
+        <span class="chip-label">${escHtml(p.label)}</span>
+        <span class="chip-value" style="font-size:11px;color:var(--text)">${escHtml(p.value || '—')}</span>
+      </div>`).join('');
+
+    const logged = (analysis.detection?.likely_logged || []).map(l => `<span class="source-tag">${escHtml(l)}</span>`).join('');
+    const iocs = (analysis.detection?.ioc_types || []).map(i => `<span class="source-tag">${escHtml(i)}</span>`).join('');
+
+    $('redteam-output').innerHTML = `
+      <div class="section" style="margin-top:12px">
+        <div class="section-label">Finding title</div>
+        <div class="section-body" style="font-weight:600">${escHtml(analysis.pentest_finding_title || '')}</div>
+      </div>
+
+      <div class="section">
+        <div class="section-label">Attack chain phase</div>
+        <div class="phase-badge">${escHtml(analysis.attack_chain?.phase || '')}</div>
+        <div class="section-body"><p>${escHtml(analysis.attack_chain?.phase_reasoning || '')}</p></div>
+        ${followOn ? `<div class="section-label" style="margin-top:8px">Likely follow-on</div><ul class="change-list">${followOn}</ul>` : ''}
+      </div>
+
+      <div class="section">
+        <div class="section-label">ATT&CK techniques</div>
+        <div>${techniques}</div>
+        ${(analysis.attck_techniques || []).map(t =>
+          `<p style="font-size:11px;color:var(--muted);margin-top:4px">${escHtml(t.id)}: ${escHtml(t.relevance)}</p>`
+        ).join('')}
+      </div>
+
+      <div class="section">
+        <div class="section-label">Exploitation maturity</div>
+        <span class="maturity-badge ${matClass}">${escHtml(analysis.exploitation_maturity || '')}</span>
+        <p style="font-size:12px;color:var(--muted);margin-top:4px">${escHtml(analysis.exploitation_maturity_reasoning || '')}</p>
+      </div>
+
+      <div class="section">
+        <div class="section-label">Prerequisites</div>
+        <div class="prereq-grid">${prereqs}</div>
+      </div>
+
+      <div class="section">
+        <div class="section-label">Detection context</div>
+        <div class="section-body">
+          ${logged ? `<p style="margin-bottom:4px"><span style="color:var(--muted);font-size:11px">Likely logged:</span><br>${logged}</p>` : ''}
+          ${iocs ? `<p style="margin-bottom:4px"><span style="color:var(--muted);font-size:11px">IOC types:</span><br>${iocs}</p>` : ''}
+          ${analysis.detection?.evasion_considerations ? `<p style="font-size:12px;margin-top:6px"><span style="color:var(--muted)">Evasion considerations:</span> ${escHtml(analysis.detection.evasion_considerations)}</p>` : ''}
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="section-label">Plain-language severity</div>
+        <div class="section-body"><p>${escHtml(analysis.cvss_plain || '')}</p></div>
+      </div>
+
+      <button class="btn btn-ghost" id="copyFinding" style="width:100%;margin-top:4px">Copy finding title</button>`;
+
+    $('copyFinding').addEventListener('click', () => {
+      navigator.clipboard.writeText(analysis.pentest_finding_title || '');
+      $('copyFinding').textContent = 'Copied!';
+      setTimeout(() => $('copyFinding').textContent = 'Copy finding title', 2000);
+    });
+
+  } catch (e) {
+    $('redteam-output').innerHTML = `<p style="color:var(--act);padding:8px 0;font-size:12px">Error: ${escHtml(e.message)}</p>`;
+  } finally {
+    $('genRedTeamBtn').disabled = false;
+    $('genRedTeamBtn').textContent = 'Generate Red Team Analysis';
+  }
+}
+
 // ─── error / no-key states ──────────────────────────────────────────────────
 function showError(message) {
   $('panel-triage').innerHTML = `
@@ -580,8 +715,9 @@ function showError(message) {
       <div class="empty-icon">⚠</div>
       <h3>Something went wrong</h3>
       <p>${escHtml(message)}</p>
-      <button class="btn" style="margin-top:12px" onclick="location.reload()">Retry</button>
+      <button class="btn" style="margin-top:12px" id="retryBtn">Retry</button>
     </div>`;
+  $('retryBtn').addEventListener('click', () => location.reload());
   $('tabs').style.display = 'flex';
   showPanel('panel-triage');
 }
