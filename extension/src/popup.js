@@ -202,7 +202,7 @@ function buildEnrichmentSummary(data) {
     }
   }
 
-  const edb = d.exploitdb;
+  const edb = data.exploitdb;
   if (edb?.found) {
     lines.push(`Exploit-DB: ${edb.exploit_count} documented exploit(s) — types: ${[...new Set(edb.exploits.map(e => e.type))].join(', ')}`);
     const verified = edb.exploits.filter(e => e.verified);
