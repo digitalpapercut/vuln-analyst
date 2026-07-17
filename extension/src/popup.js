@@ -439,6 +439,17 @@ function renderEnrich() {
       <div class="section-body"><p>${escHtml(nvd.cwes.join(', '))}</p></div>
     </div>` : ''}
 
+    ${d.exploitdb?.found ? `
+    <div class="section">
+      <div class="section-label">Exploit-DB (${d.exploitdb.exploit_count} entr${d.exploitdb.exploit_count === 1 ? 'y' : 'ies'})</div>
+      <div class="section-body">
+        ${d.exploitdb.exploits.slice(0,5).map(e =>
+          `<p><a href="${escHtml(e.url)}" target="_blank" style="color:var(--accent2)">${escHtml(e.title.slice(0,80))}</a>
+          <span style="color:var(--muted)"> · ${escHtml(e.type)} · ${escHtml(e.platform)}${e.verified ? ' · <span style="color:var(--attend)">verified</span>' : ''}</span></p>`
+        ).join('')}
+      </div>
+    </div>` : ''}
+    
     ${exploits?.weaponized_tooling_public ? `
     <div class="section">
       <div class="section-label">⚠ Public exploit tooling</div>

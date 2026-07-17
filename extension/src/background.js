@@ -67,13 +67,14 @@ async function fetchEnrichment(cve) {
     return { ...cached[cacheKey].data, cached: true };
   }
 
-  const [epss, kev, nvd, cvelist, osv, exploits] = await Promise.allSettled([
+  const [epss, kev, nvd, cvelist, osv, exploits, edb] = await Promise.allSettled([
     fetchEPSS(id),
     fetchKEV(id),
     fetchNVD(id),
     fetchCVEList(id),
     fetchOSV(id),
     fetchExploitSignals(id),
+    fetchExploitDB(id),
   ]);
 
   const data = {
@@ -84,6 +85,7 @@ async function fetchEnrichment(cve) {
     cvelist:  cvelist.status  === 'fulfilled' ? cvelist.value  : { error: cvelist.reason?.message },
     osv:      osv.status      === 'fulfilled' ? osv.value      : { error: osv.reason?.message },
     exploits: exploits.status === 'fulfilled' ? exploits.value : { error: exploits.reason?.message },
+    exploitdb: edb.status === 'fulfilled' ? edb.value : { error: edb.reason?.message },
     fetched_at: new Date().toISOString(),
   };
 
@@ -373,4 +375,59 @@ async function callLLM({ messages, system, provider, model, apiKey }) {
   }
   const d = await r.json();
   return d.choices?.[0]?.message?.content || '';
+}
+
+async function fetchExploitDB(cve) {
+  const CSV_URL = 'https://gitlab.com/exploit-database/exploitdb/-/raw/main/files_exploits.csv';
+  const CACHE_KEY = 'exploitdb_csv_cache';
+  const CACHE_TTL = 24 * 60 * 60 * 1000;
+
+  let raw;
+  const cached = await chrome.storage.local.get(CACHE_KEY);
+  if (cached[CACHE_KEY] && Date.now() - cached[CACHE_KEY].ts < CACHE_TTL) {
+    raw = cached[CACHE_KEY].data;
+  } else {
+    const r = await fetch(CSV_URL, { headers: { 'User-Agent': UA } });
+    if (!r.ok) throw new Error(`ExploitDB CSV ${r.status}`);
+    raw = await r.text();
+    try {
+      await chrome.storage.local.set({ [CACHE_KEY]: { data: raw, ts: Date.now() } });
+    } catch (_) {}
+  }
+
+  const lines = raw.split('\n');
+  const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
+  const idIdx = headers.indexOf('id');
+  const descIdx = headers.indexOf('description');
+  const dateIdx = headers.indexOf('date_published');
+  const typeIdx = headers.indexOf('type');
+  const platformIdx = headers.indexOf('platform');
+  const verifiedIdx = headers.indexOf('verified');
+  const codesIdx = headers.indexOf('codes');
+
+  const found = [];
+  for (let i = 1; i < lines.length; i++) {
+    const line = lines[i];
+    if (!line.trim()) continue;
+    const cols = line.split(',');
+    const codes = (cols[codesIdx] || '').replace(/"/g, '');
+    if (codes.toUpperCase().includes(cve)) {
+      found.push({
+        edb_id: (cols[idIdx] || '').trim(),
+        title: (cols[descIdx] || '').trim().replace(/"/g, ''),
+        date: (cols[dateIdx] || '').trim(),
+        type: (cols[typeIdx] || '').trim(),
+        platform: (cols[platformIdx] || '').trim(),
+        verified: (cols[verifiedIdx] || '').trim() === '1',
+        url: `https://www.exploit-db.com/exploits/${(cols[idIdx] || '').trim()}`,
+      });
+    }
+  }
+
+  return {
+    found: found.length > 0,
+    exploit_count: found.length,
+    exploits: found,
+    source: 'Exploit-DB (Offensive Security)',
+  };
 }
