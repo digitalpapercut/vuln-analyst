@@ -23,6 +23,19 @@ Navigate to any CVE page, click the extension icon, hit Analyze:
 - **Triage tab** — SSVC verdict, signal strip (EPSS · KEV · exploit tooling), decision inputs, and an environment context form to refine for your situation
 - **Research tab** — full enrichment profile: description, CVSS decoded, CWE, affected versions, exploit tooling details, identifier aliases
 - **Write-up tab** — one-click exec summary, remediation ticket, or auditor-ready risk-acceptance memo using the actual evidence fetched — not generic templates
+- **Red Team tab** — ATT&CK technique mapping, attack chain phase, exploitation maturity, prerequisites, and detection context for authorized engagements
+
+---
+
+## Screenshots
+
+| Triage | Research |
+|---|---|
+| ![Triage tab](docs/images/Triage.png) | ![Research tab](docs/images/Research.png) |
+
+| Write-up | Red Team |
+|---|---|
+| ![Write-up tab](docs/images/Writeup.png) | ![Red Team tab](docs/images/Redteam.png) |
 
 ---
 
