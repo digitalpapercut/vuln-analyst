@@ -65,7 +65,7 @@ Works on any page with a CVE. No terminal needed.
 
 **Manual:** click the extension icon from any page → type a CVE ID → click **Analyze**
 
-### The three tabs
+### The four tabs
 
 **TRIAGE** — The main output.
 - SSVC decision: **ACT**, **ATTEND**, **TRACK\***, or **TRACK**
@@ -83,6 +83,11 @@ Works on any page with a CVE. No terminal needed.
 - Identifier aliases (CVE ↔ GHSA ↔ OSV)
 
 **WRITE-UP** — Document generation using your actual triage evidence.
+- **Executive summary** — ≤200 words, business language, one clear ask with date
+- **Remediation ticket** — affected versions, fixed version, exploitation evidence, validation step
+- **Risk-acceptance memo** — full auditor-ready document with voiding conditions, signature blocks, and mandatory review date
+
+All write-ups cite the actual EPSS score, KEV date, and exploitation evidence fetched during analysis.
 
 **RED TEAM** — For authorized security testing. Generates:
 - ATT&CK technique mapping (Txxxx IDs with links to attack.mitre.org)
@@ -95,11 +100,6 @@ Works on any page with a CVE. No terminal needed.
 - Plain-language CVSS explanation for non-technical clients
 
 > All red team analysis is for authorized engagements only. The tool links to public exploit pages but never downloads or serves exploit code.
-- **Executive summary** — ≤200 words, business language, one clear ask with date
-- **Remediation ticket** — affected versions, fixed version, exploitation evidence, validation step
-- **Risk-acceptance memo** — full auditor-ready document with voiding conditions, signature blocks, and mandatory review date
-
-All write-ups cite the actual EPSS score, KEV date, and exploitation evidence fetched during analysis.
 
 ### Tips
 - Results are cached for 6 hours — re-opening on the same CVE is instant
