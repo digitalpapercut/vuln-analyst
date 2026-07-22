@@ -81,6 +81,15 @@ function escHtml(s) {
     .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
+function safeUrl(s) {
+  try {
+    const u = new URL(String(s));
+    return (u.protocol === 'http:' || u.protocol === 'https:') ? u.href : '#';
+  } catch {
+    return '#';
+  }
+}
+
 // ─── analysis entry point ───────────────────────────────────────────────────
 async function startAnalysis() {
   const cve = $('cveInput').value.trim().toUpperCase();
@@ -454,7 +463,7 @@ function renderEnrich() {
       <div class="section-label">⚠ Exploit-DB entries (${d.exploitdb.exploit_count})</div>
       <div class="section-body">
         ${d.exploitdb.exploits.slice(0,5).map(e =>
-          `<p><a href="${escHtml(e.url)}" target="_blank" style="color:var(--accent2)">${escHtml(e.title.slice(0,80))}</a>
+          `<p><a href="${escHtml(safeUrl(e.url))}" target="_blank" style="color:var(--accent2)">${escHtml(e.title.slice(0,80))}</a>
           <span style="color:var(--muted)"> · ${escHtml(e.type)} · ${escHtml(e.platform)} · ${e.verified ? '<span style="color:var(--attend)">verified</span>' : 'unverified'}</span></p>`
         ).join('')}
       </div>
@@ -626,7 +635,7 @@ async function generateRedTeam() {
 
     const matClass = { weaponized:'mat-weaponized', functional:'mat-functional', poc:'mat-poc', theoretical:'mat-theoretical' }[analysis.exploitation_maturity] || 'mat-poc';
     const techniques = (analysis.attck_techniques || []).map(t =>
-      `<div class="attck-badge"><a href="${escHtml(t.url)}" target="_blank">${escHtml(t.id)}</a><span style="color:var(--text)">${escHtml(t.name)}</span></div>`
+      `<div class="attck-badge"><a href="${escHtml(safeUrl(t.url))}" target="_blank">${escHtml(t.id)}</a><span style="color:var(--text)">${escHtml(t.name)}</span></div>`
     ).join('');
 
     const followOn = (analysis.attack_chain?.follow_on || []).map(f =>
@@ -679,12 +688,12 @@ async function generateRedTeam() {
           return `<div style="margin-top:8px">
             ${verified.length ? `<div class="section-label" style="margin-bottom:4px">✓ Verified exploit code</div>
             ${verified.map(e => `<div style="margin-bottom:4px">
-              <a href="${escHtml(e.url)}" target="_blank" style="color:var(--act);font-size:12px;font-weight:600">${escHtml(e.title.slice(0,70))}</a>
+              <a href="${escHtml(safeUrl(e.url))}" target="_blank" style="color:var(--act);font-size:12px;font-weight:600">${escHtml(e.title.slice(0,70))}</a>
               <span style="color:var(--muted);font-size:11px"> · ${escHtml(e.type)} · ${escHtml(e.platform)} · EDB-${escHtml(e.edb_id)}</span>
             </div>`).join('')}` : ''}
             ${unverified.length ? `<div class="section-label" style="margin-top:6px;margin-bottom:4px">Unverified exploit references</div>
             ${unverified.map(e => `<div style="margin-bottom:4px">
-              <a href="${escHtml(e.url)}" target="_blank" style="color:var(--accent2);font-size:12px">${escHtml(e.title.slice(0,70))}</a>
+              <a href="${escHtml(safeUrl(e.url))}" target="_blank" style="color:var(--accent2);font-size:12px">${escHtml(e.title.slice(0,70))}</a>
               <span style="color:var(--muted);font-size:11px"> · ${escHtml(e.type)} · ${escHtml(e.platform)} · EDB-${escHtml(e.edb_id)}</span>
             </div>`).join('')}` : ''}
           </div>`;
